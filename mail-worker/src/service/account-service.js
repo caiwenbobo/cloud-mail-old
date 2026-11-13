@@ -10,6 +10,8 @@ import {accountConst, isDel, settingConst} from '../const/entity-const';
 import settingService from './setting-service';
 import turnstileService from './turnstile-service';
 import roleService from './role-service';
+// ===== PATCH：新增导入 =====
+import domainService from './domain-service';
 import { t } from '../i18n/i18n';
 import verifyRecordService from './verify-record-service';
 
@@ -35,7 +37,11 @@ const accountService = {
 			throw new BizError(t('notEmail'));
 		}
 
-		if (!c.env.domain.includes(emailUtils.getDomain(email))) {
+		// ===== PATCH：用合并后的域名列表（env + KV）精确校验，不再直接读 c.env.domain =====
+		// 原写法对字符串型 env 是子串匹配（例如域名 "xample.com" 也能通过包含检查）；
+		// 现在是精确匹配，更严格；KV 读失败时退回仅 env，旧域名不受影响。
+		const allDomains = await domainService.getAllBareDomains(c);
+		if (!allDomains.includes(emailUtils.getDomain(email).toLowerCase())) {
 			throw new BizError(t('notExistDomain'));
 		}
 
