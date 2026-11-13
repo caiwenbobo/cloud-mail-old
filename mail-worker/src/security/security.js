@@ -43,6 +43,10 @@ const requirePerms = [
 	'/setting/deleteBackground',
 	'/setting/set',
 	'/setting/query',
+	// ===== PATCH：新增——域名管理接口也要过权限检查（非管理员无对应权限会被拦在中间件）=====
+	'/setting/domains',
+	'/setting/domain/add',
+	'/setting/domain/delete',
 	'/user/delete',
 	'/user/setPwd',
 	'/user/setStatus',
@@ -79,8 +83,11 @@ const premKey = {
 	'user:delete': ['/user/delete','/user/deleteAccount'],
 	'all-email:query': ['/allEmail/list','/allEmail/latest'],
 	'all-email:delete': ['/allEmail/delete','/allEmail/batchDelete'],
-	'setting:query': ['/setting/query'],
-	'setting:set': ['/setting/set', '/setting/setBackground','/setting/deleteBackground'],
+	// ===== PATCH：域名列表查询归到 setting:query；增删归到 setting:set =====
+	// 即使这里漏配，domain-service.requireAdmin()（按 c.env.admin 校验）仍是第二道防线；
+	// 管理员（登录邮箱 === c.env.admin）在 security.js 里本来就绕过权限检查。
+	'setting:query': ['/setting/query', '/setting/domains'],
+	'setting:set': ['/setting/set', '/setting/setBackground','/setting/deleteBackground', '/setting/domain/add', '/setting/domain/delete'],
 	'analysis:query': ['/analysis/echarts'],
 	'reg-key:add': ['/regKey/add'],
 	'reg-key:query': ['/regKey/list','/regKey/history'],
