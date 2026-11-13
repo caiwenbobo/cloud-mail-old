@@ -8,6 +8,8 @@ import constant from '../const/constant';
 import BizError from '../error/biz-error';
 import {t} from '../i18n/i18n'
 import verifyRecordService from './verify-record-service';
+// ===== PATCH：新增导入（域名合并逻辑见 domain-service.js）=====
+import domainService from './domain-service';
 
 const settingService = {
 
@@ -44,7 +46,21 @@ const settingService = {
 			throw new BizError(t('noDomainVariable'));
 		}
 
-		domainList = domainList.map(item => '@' + item);
+		// ===== PATCH：域名列表 = env domain + KV 里本面板添加的域名 =====
+		// 原来两处报错逻辑（JSON 解析失败 / 未配置 domain）原样保留；
+		// getCustomDomains() 内部已做 fail-safe：KV 读失败返回 []，这里不会抛错，
+		// 所以 websiteConfig / 登录 / 发信永远不会因为 KV 出问题而挂掉。
+		// 另外加了 Array.isArray 防护：原来 env 解析出非数组时会直接 .map 崩掉。
+		const customDomains = await domainService.getCustomDomains(c);
+		const allBareDomains = [...new Set([
+			...(Array.isArray(domainList) ? domainList : [])
+				.filter((item) => typeof item === 'string')
+				.map((item) => item.trim().toLowerCase())
+				.filter(Boolean),
+			...customDomains,
+		])];
+
+		domainList = allBareDomains.map(item => '@' + item);
 		setting.domainList = domainList;
 
 
