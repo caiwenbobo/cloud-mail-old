@@ -15,6 +15,8 @@ import cryptoUtils from '../utils/crypto-utils';
 import turnstileService from './turnstile-service';
 import roleService from './role-service';
 import regKeyService from './reg-key-service';
+// ===== PATCH：新增导入 =====
+import domainService from './domain-service';
 import dayjs from 'dayjs';
 import { toUtc } from '../utils/date-uitil';
 import { t } from '../i18n/i18n.js';
@@ -61,7 +63,12 @@ const loginService = {
 			throw new BizError(t('pwdMinLength'));
 		}
 
-		if (!c.env.domain.includes(emailUtils.getDomain(email))) {
+		// ===== PATCH：用合并后的域名列表（env + KV）精确校验，不再直接读 c.env.domain =====
+		// 这是公开注册（/register，免登录接口）时的校验；KV 读失败时退回仅 env，旧域名不受影响。
+		// 注意：register() 前面已经调过 settingService.query(c)，query 里同样会合并 KV 域名，
+		// 所以网站前台显示的域名和这里放行的域名永远一致。
+		const allDomains = await domainService.getAllBareDomains(c);
+		if (!allDomains.includes(emailUtils.getDomain(email).toLowerCase())) {
 			throw new BizError(t('notEmailDomain'));
 		}
 
