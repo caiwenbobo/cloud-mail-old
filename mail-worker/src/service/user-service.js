@@ -11,6 +11,8 @@ import emailService from './email-service';
 import dayjs from 'dayjs';
 import permService from './perm-service';
 import roleService from './role-service';
+// ===== PATCH：新增导入 =====
+import domainService from './domain-service';
 import emailUtils from '../utils/email-utils';
 import saltHashUtils from '../utils/crypto-utils';
 import constant from '../const/constant';
@@ -306,7 +308,10 @@ const userService = {
 
 		const { email, type, password } = params;
 
-		if (!c.env.domain.includes(emailUtils.getDomain(email))) {
+		// ===== PATCH：用合并后的域名列表（env + KV）精确校验，不再直接读 c.env.domain =====
+		// 这是管理员在后台手动建用户时的校验；KV 读失败时退回仅 env，旧域名不受影响。
+		const allDomains = await domainService.getAllBareDomains(c);
+		if (!allDomains.includes(emailUtils.getDomain(email).toLowerCase())) {
 			throw new BizError(t('notEmailDomain'));
 		}
 
