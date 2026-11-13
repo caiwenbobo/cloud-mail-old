@@ -6,6 +6,8 @@ import '../api/user-api';
 import '../api/login-api';
 import '../api/setting-api';
 import '../api/account-api';
+// ===== PATCH：新增（有效期补丁）——不 import 的话 expiry-api.js 里的路由不会注册 =====
+import '../api/expiry-api';
 import '../api/star-api';
 import '../api/test-api';
 import '../api/r2-api';
