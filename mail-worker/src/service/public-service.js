@@ -6,6 +6,8 @@ import saltHashUtils from '../utils/crypto-utils';
 import cryptoUtils from '../utils/crypto-utils';
 import emailUtils from '../utils/email-utils';
 import roleService from './role-service';
+// ===== PATCH：新增导入 =====
+import domainService from './domain-service';
 import verifyUtils from '../utils/verify-utils';
 import { t } from '../i18n/i18n';
 import reqUtils from '../utils/req-utils';
@@ -99,12 +101,17 @@ const publicService = {
 
 		if (list.length === 0) return;
 
+		// ===== PATCH：合并后的域名列表只读一次（原来每行都直接读 c.env.domain）=====
+		// addUser 是 /public/* 批量导入接口，调用前已由 verifyUser 校验过管理员身份
+		// （public-service.verifyUser：email !== c.env.admin 即报错）。
+		const allDomains = await domainService.getAllBareDomains(c);
+
 		for (const emailRow of list) {
 			if (!verifyUtils.isEmail(emailRow.email)) {
 				throw new BizError(t('notEmail'));
 			}
 
-			if (!c.env.domain.includes(emailUtils.getDomain(emailRow.email))) {
+			if (!allDomains.includes(emailUtils.getDomain(emailRow.email).toLowerCase())) {
 				throw new BizError(t('notEmailDomain'));
 			}
 
